@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi Kiosk Dashboard</title>
+    <!-- Google Fonts: Outfit for clean, modern geometry -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- Premium background glowing blobs -->
+    <div class="glow-bg">
+        <div class="blob blob-purple"></div>
+        <div class="blob blob-blue"></div>
+        <div class="blob blob-teal"></div>
+    </div>
+
+    <div class="dashboard-wrapper">
+        <main class="dashboard-grid">
+            
+            <!-- LEFT COLUMN: TIME, WEATHER, SYSTEM STATS -->
+            <section class="left-column">
+                
+                <!-- 1. TIME & DATE CARD -->
+                <div class="glass-panel card-time">
+                    <div class="time-content">
+                        <h1 id="clock">12:00:00</h1>
+                        <div class="date-container">
+                            <span id="day-name">Thursday</span>, 
+                            <span id="date-string">August 7, 2026</span>
+                        </div>
+                    </div>
+                    <div class="status-indicator-bar">
+                        <div class="status-badge" id="net-status">
+                            <i data-lucide="wifi" class="icon-small"></i>
+                            <span id="net-status-text">Checking Network</span>
+                        </div>
+                        <div class="status-badge" id="pi-temp-badge">
+                            <i data-lucide="thermometer" class="icon-small"></i>
+                            <span id="pi-temp-text">--°C</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. WEATHER WIDGET -->
+                <div class="glass-panel card-weather">
+                    <div class="weather-header">
+                        <div class="weather-title">
+                            <h3>Weather</h3>
+                            <span class="location-name">Goodyear, AZ</span>
+                        </div>
+                        <div class="weather-current-icon" id="weather-icon-container">
+                            <i data-lucide="cloud-sun" class="icon-large animated-weather"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="weather-body">
+                        <div class="weather-temp-now">
+                            <span id="current-temp">--</span><span class="temp-unit">°F</span>
+                        </div>
+                        <div class="weather-desc-now" id="weather-description">Loading weather...</div>
+                    </div>
+
+                    <div class="weather-divider"></div>
+
+                    <!-- 3-Day Forecast -->
+                    <div class="weather-forecast" id="forecast-container">
+                        <!-- Forecast items injected dynamically -->
+                        <div class="forecast-day-placeholder"></div>
+                        <div class="forecast-day-placeholder"></div>
+                        <div class="forecast-day-placeholder"></div>
+                    </div>
+                </div>
+
+                <!-- 3. SYSTEM STATS & CHART -->
+                <div class="glass-panel card-system">
+                    <div class="card-header">
+                        <div class="card-header-title">
+                            <i data-lucide="cpu" class="icon-medium title-icon"></i>
+                            <h3>Pi System Health</h3>
+                        </div>
+                        <span class="uptime-badge" id="uptime-text">Uptime: --</span>
+                    </div>
+
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <div class="metric-info">
+                                <span class="metric-label">CPU Load</span>
+                                <span class="metric-value" id="cpu-value">--%</span>
+                            </div>
+                            <div class="metric-progress-bg">
+                                <div class="metric-progress-fill" id="cpu-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div class="metric-item">
+                            <div class="metric-info">
+                                <span class="metric-label">Memory</span>
+                                <span class="metric-value" id="mem-value">-- / -- GB</span>
+                            </div>
+                            <div class="metric-progress-bg">
+                                <div class="metric-progress-fill" id="mem-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div class="metric-item">
+                            <div class="metric-info">
+                                <span class="metric-label">Disk Storage</span>
+                                <span class="metric-value" id="disk-value">--%</span>
+                            </div>
+                            <div class="metric-progress-bg">
+                                <div class="metric-progress-fill" id="disk-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- History Chart Canvas -->
+                    <div class="chart-container">
+                        <canvas id="metricsChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT COLUMN: GOOGLE CALENDAR -->
+            <section class="right-column">
+                <div class="glass-panel card-calendar">
+                    <div class="calendar-header">
+                        <div class="calendar-header-title">
+                            <i data-lucide="calendar" class="icon-medium title-icon"></i>
+                            <h3>Upcoming Events</h3>
+                        </div>
+                        <div class="connection-badge" id="calendar-status">
+                            <span class="badge-dot"></span>
+                            <span id="calendar-status-text">Syncing...</span>
+                        </div>
+                    </div>
+
+                    <!-- Google Auth Helper Panel (Visible in demo mode, collapsible) -->
+                    <div class="setup-helper-panel hidden" id="setup-panel">
+                        <div class="setup-helper-header">
+                            <div class="setup-helper-title">
+                                <i data-lucide="info" class="icon-small text-accent"></i>
+                                <h4>Google Calendar Setup Required</h4>
+                            </div>
+                            <button class="btn-close-setup" id="btn-close-setup" aria-label="Close setup banner">
+                                <i data-lucide="x" class="icon-small"></i>
+                            </button>
+                        </div>
+                        <p class="setup-desc">To show your real Google Calendar, follow these steps:</p>
+                        <ol class="setup-steps">
+                            <li>Put your <code>credentials.json</code> inside the <code>backend/</code> folder.</li>
+                            <li>Run <code>python backend/auth_helper.py</code> in the terminal on the Raspberry Pi.</li>
+                            <li>Authorize your account. This will save <code>token.json</code> and enable full synchronization.</li>
+                        </ol>
+                        <div class="setup-status-indicator">
+                            <span class="setup-badge" id="setup-cred-badge">
+                                <i data-lucide="file-code" class="icon-small"></i> credentials.json missing
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Calendar Events List -->
+                    <div class="calendar-events-list" id="calendar-events-container">
+                        <!-- Events will be dynamically injected here -->
+                        <div class="loading-state">
+                            <div class="spinner"></div>
+                            <span>Fetching your calendar...</span>
+                        </div>
+                    </div>
+
+                    <div class="calendar-footer">
+                        <button class="btn-action" id="btn-refresh-calendar" title="Force Refresh">
+                            <i data-lucide="refresh-cw" class="icon-small"></i> Refresh
+                        </button>
+                        <button class="btn-action" id="btn-show-setup" title="Show Setup Instructions">
+                            <i data-lucide="settings" class="icon-small"></i> Setup Google API
+                        </button>
+                    </div>
+                </div>
+            </section>
+            
+        </main>
+    </div>
+
+    <!-- UI Overlay for full dashboard actions (e.g. settings or reload) -->
+    <div class="quick-actions-bar">
+        <button class="btn-circle-action" id="btn-toggle-dim" title="Toggle Dim Mode">
+            <i data-lucide="moon"></i>
+        </button>
+        <button class="btn-circle-action" id="btn-reload-all" title="Reload App">
+            <i data-lucide="rotate-cw"></i>
+        </button>
+    </div>
+
+    <!-- Script imports -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
