@@ -410,28 +410,30 @@ function updateCalendarUI(data) {
         const eventCard = document.createElement('div');
         eventCard.className = `event-item ${colorClass} ${todayClass}`;
         
+        const eventTitle = (event.summary && event.summary.trim()) ? event.summary.trim() : '(No Title)';
+        
         // Build card HTML
         eventCard.innerHTML = `
             <div class="event-date-box">
-                <span class="event-date-month">${monthLabel}</span>
-                <span class="event-date-num">${dateNum}</span>
-                <span class="event-date-day">${dayLabel}</span>
+                <span class="event-date-month">${escapeHtml(monthLabel)}</span>
+                <span class="event-date-num">${escapeHtml(String(dateNum))}</span>
+                <span class="event-date-day">${escapeHtml(dayLabel)}</span>
             </div>
             <div class="event-details">
-                <h4 class="event-title">${event.summary}</h4>
+                <h4 class="event-title">${escapeHtml(eventTitle)}</h4>
                 <div class="event-time-loc">
                     <div class="event-meta-item time">
                         <i data-lucide="clock" class="icon-small"></i>
-                        <span>${timeRangeText}</span>
+                        <span>${escapeHtml(timeRangeText)}</span>
                     </div>
                     ${event.location ? `
                         <div class="event-meta-item location">
                             <i data-lucide="map-pin" class="icon-small"></i>
-                            <span>${event.location}</span>
+                            <span>${escapeHtml(event.location)}</span>
                         </div>
                     ` : ''}
                 </div>
-                ${event.description ? `<p class="event-desc">${event.description}</p>` : ''}
+                ${event.description ? `<p class="event-desc">${escapeHtml(event.description)}</p>` : ''}
             </div>
         `;
         
@@ -450,5 +452,15 @@ function formatTime(dateObj) {
     hours = hours ? hours : 12; // block "0" to be "12"
     
     return `${hours}:${minutes} ${ampm}`;
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 

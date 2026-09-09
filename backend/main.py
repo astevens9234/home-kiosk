@@ -204,9 +204,10 @@ def get_calendar_events():
             # Map events to standard structure
             processed_events = []
             for item in events:
+                summary = item.get("summary") or item.get("description") or "(No Title)"
                 processed_events.append({
                     "id": item.get("id"),
-                    "summary": item.get("summary", "No Title"),
+                    "summary": summary.strip() if summary else "(No Title)",
                     "start": item.get("start"),
                     "end": item.get("end"),
                     "description": item.get("description", ""),
