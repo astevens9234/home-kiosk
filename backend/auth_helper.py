@@ -8,7 +8,7 @@ TOKEN_PATH = os.path.join(BACKEND_DIR, 'token.json')
 
 def main():
     print("====================================================")
-    print("      Google Calendar API Authentication Helper      ")
+    print("      Google Calendar API Authentication Helper     ")
     print("====================================================")
     
     if not os.path.exists(CREDENTIALS_PATH):

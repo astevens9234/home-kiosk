@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: home-kiosk
+  labels:
+    app: home-kiosk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: home-kiosk
+  template:
+    metadata:
+      labels:
+        app: home-kiosk
+    spec:
+      containers:
+      - name: home-kiosk
+        # Replace with your container registry image tag:
+        # e.g., <your-registry>/home-kiosk:latest or docker.io/<user>/home-kiosk:latest
+        image: home-kiosk:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+        livenessProbe:
+          httpGet:
+            path: /api/metrics
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /api/metrics
+            port: 8000
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+        # Optional: Uncomment to mount Google Calendar credentials/tokens from a Secret
+        # volumeMounts:
+        # - name: google-creds
+        #   mountPath: /app/backend/credentials.json
+        #   subPath: credentials.json
+        #   readOnly: true
+        # - name: google-token
+        #   mountPath: /app/backend/token.json
+        #   subPath: token.json
+        #   readOnly: true
+      # volumes:
+      # - name: google-creds
+      #   secret:
+      #     secretName: home-kiosk-google-creds
+      # - name: google-token
+      #   secret:
+      #     secretName: home-kiosk-google-token
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: home-kiosk-service
+  labels:
+    app: home-kiosk
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: home-kiosk
+---
+# Ingress (k3s includes Traefik by default)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: home-kiosk-ingress
+  labels:
+    app: home-kiosk
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+  # Replace with your kiosk domain or remove the host line to match any host
+  - host: kiosk.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: home-kiosk-service
+            port:
+              number: 80

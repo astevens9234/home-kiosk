@@ -14,17 +14,12 @@ const CONFIG = {
         clock: 1000,
         metrics: 3000,
         weather: 600000, // 10 minutes
-        calendar: 60000 // 1 minute
+        calendar: 60000  // 1 minute
     }
 };
 
 // Application State
 const STATE = {
-    metricsHistory: {
-        cpu: [],
-        memory: [],
-        limit: 20
-    },
     setupPanelClosed: localStorage.getItem('setup_panel_closed') === 'true',
     weatherCodeMap: {
         0: { desc: 'Clear sky', icon: 'sun' },
@@ -52,14 +47,11 @@ const STATE = {
         82: { desc: 'Violent rain showers', icon: 'cloud-lightning' },
         85: { desc: 'Slight snow showers', icon: 'snowflake' },
         86: { desc: 'Heavy snow showers', icon: 'snowflake' },
-        95: { desc: 'Thunderstorm', icon: 'cloud-lightning' },
+        95: { desc: 'Thunderstorm', icon: 'sun' },
         96: { desc: 'Thunderstorm with slight hail', icon: 'cloud-lightning' },
         99: { desc: 'Thunderstorm with heavy hail', icon: 'cloud-lightning' }
     }
 };
-
-// Canvas Chart Helper
-let chartCanvas, ctx;
 
 /* ==========================================================================
    INITIALIZATION
@@ -73,9 +65,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.add('dimmed');
         updateDimButtonIcon(true);
     }
-
-    // Set up canvas elements
-    initCanvas();
 
     // Start Clock
     updateClock();
@@ -143,12 +132,6 @@ function setupEventListeners() {
         setupPanel.classList.add('hidden');
         localStorage.setItem('setup_panel_closed', 'true');
         STATE.setupPanelClosed = true;
-    });
-
-    // Handle canvas resize on screen orientation changes
-    window.addEventListener('resize', () => {
-        resizeCanvas();
-        drawMetricsChart();
     });
 }
 
@@ -279,7 +262,7 @@ function updateWeatherUI(data) {
 }
 
 /* ==========================================================================
-   SYSTEM STATS SERVICE & LIGHTWEIGHT CANVAS CHARTING
+   SYSTEM STATS SERVICE (Optimized for Clock Temp Badge)
    ========================================================================== */
 async function fetchMetrics() {
     try {
@@ -287,147 +270,24 @@ async function fetchMetrics() {
         if (!response.ok) throw new Error('Metrics API error');
         const data = await response.json();
         
-        // Update DOM stats elements
-        document.getElementById('cpu-value').textContent = `${Math.round(data.cpu_usage)}%`;
-        document.getElementById('cpu-bar').style.width = `${data.cpu_usage}%`;
-        
-        document.getElementById('mem-value').textContent = `${data.memory_used_gb} / ${data.memory_total_gb} GB`;
-        document.getElementById('mem-bar').style.width = `${data.memory_usage}%`;
-        
-        document.getElementById('disk-value').textContent = `${Math.round(data.disk_usage)}%`;
-        document.getElementById('disk-bar').style.width = `${data.disk_usage}%`;
-        
-        document.getElementById('uptime-text').textContent = `Uptime: ${data.uptime}`;
-        
         // Temperature badge update
         const tempText = document.getElementById('pi-temp-text');
         const tempBadge = document.getElementById('pi-temp-badge');
-        tempText.textContent = `${data.cpu_temp.toFixed(1)}°C`;
         
-        if (data.cpu_temp >= 68.0) {
-            tempBadge.className = 'status-badge hot';
-        } else {
-            tempBadge.className = 'status-badge';
-            tempBadge.style.color = ''; // Reset custom class colors if any
+        if (tempText) {
+            tempText.textContent = `${data.cpu_temp.toFixed(1)}°C`;
         }
         
-        // Save values to charting history
-        STATE.metricsHistory.cpu.push(data.cpu_usage);
-        STATE.metricsHistory.memory.push(data.memory_usage);
-        
-        // Trim history
-        if (STATE.metricsHistory.cpu.length > STATE.metricsHistory.limit) {
-            STATE.metricsHistory.cpu.shift();
-            STATE.metricsHistory.memory.shift();
+        if (tempBadge) {
+            if (data.cpu_temp >= 68.0) {
+                tempBadge.className = 'status-badge hot';
+            } else {
+                tempBadge.className = 'status-badge';
+            }
         }
-        
-        // Redraw high-perf canvas graph
-        drawMetricsChart();
     } catch (error) {
         console.error('Metrics fetch error:', error);
     }
-}
-
-function initCanvas() {
-    chartCanvas = document.getElementById('metricsChart');
-    ctx = chartCanvas.getContext('2d');
-    resizeCanvas();
-}
-
-function resizeCanvas() {
-    if (!chartCanvas) return;
-    
-    // Scale canvas pixels for HDPI / Retina displays to make lines super sharp
-    const dpr = window.devicePixelRatio || 1;
-    const rect = chartCanvas.getBoundingClientRect();
-    
-    chartCanvas.width = rect.width * dpr;
-    chartCanvas.height = rect.height * dpr;
-    
-    ctx.scale(dpr, dpr);
-}
-
-function drawMetricsChart() {
-    if (!ctx || !chartCanvas) return;
-    
-    const dpr = window.devicePixelRatio || 1;
-    const width = chartCanvas.width / dpr;
-    const height = chartCanvas.height / dpr;
-    
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
-    
-    const cpuData = STATE.metricsHistory.cpu;
-    const memData = STATE.metricsHistory.memory;
-    const maxPoints = STATE.metricsHistory.limit;
-    
-    if (cpuData.length < 2) return;
-    
-    // 1. Draw horizontal faint grid lines
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
-    ctx.lineWidth = 1;
-    
-    const gridRows = 3;
-    for (let i = 1; i <= gridRows; i++) {
-        const y = (height / (gridRows + 1)) * i;
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
-    }
-    
-    // Helper function to plot a line dataset
-    const drawDataset = (data, color, fillGradStart) => {
-        ctx.beginPath();
-        
-        // Calculate points coordinates
-        const points = data.map((val, idx) => {
-            const x = (idx / (maxPoints - 1)) * width;
-            // Invert Y coordinate (0 load is bottom, 100 load is top)
-            const y = height - (val / 100.0) * (height - 8) - 4; // Padding
-            return { x, y };
-        });
-        
-        // Draw smooth bezier curve or line segments
-        ctx.moveTo(points[0].x, points[0].y);
-        for (let i = 1; i < points.length; i++) {
-            ctx.lineTo(points[i].x, points[i].y);
-        }
-        
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2.0;
-        ctx.lineJoin = 'round';
-        ctx.lineCap = 'round';
-        ctx.stroke();
-        
-        // Draw fill under the line
-        ctx.lineTo(points[points.length - 1].x, height);
-        ctx.lineTo(points[0].x, height);
-        ctx.closePath();
-        
-        const gradient = ctx.createLinearGradient(0, 0, 0, height);
-        gradient.addColorStop(0, fillGradStart);
-        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        
-        ctx.fillStyle = gradient;
-        ctx.fill();
-        
-        // Draw small dot on last point
-        const last = points[points.length - 1];
-        ctx.beginPath();
-        ctx.arc(last.x, last.y, 3, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
-        ctx.lineWidth = 1.5;
-        ctx.strokeStyle = '#ffffff';
-        ctx.stroke();
-    };
-    
-    // Draw Memory line first (blue)
-    drawDataset(memData, '#3b82f6', 'rgba(59, 130, 246, 0.12)');
-    
-    // Draw CPU line second (purple)
-    drawDataset(cpuData, '#8b5cf6', 'rgba(139, 92, 246, 0.16)');
 }
 
 /* ==========================================================================
@@ -591,3 +451,4 @@ function formatTime(dateObj) {
     
     return `${hours}:${minutes} ${ampm}`;
 }
+
