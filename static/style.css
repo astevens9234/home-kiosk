@@ -674,6 +674,8 @@ body.dimmed {
 /* Event Item Card */
 .event-item {
     display: flex;
+    flex-shrink: 0;
+    min-height: 74px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.03);
     border-radius: 18px;
@@ -701,10 +703,12 @@ body.dimmed {
 /* Left part: Date Box */
 .event-date-box {
     display: flex;
+    flex-shrink: 0;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     width: 75px;
+    min-width: 75px;
     background: rgba(255, 255, 255, 0.01);
     border-right: 1px solid rgba(255, 255, 255, 0.02);
     padding: 0.75rem;

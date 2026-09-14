@@ -410,8 +410,10 @@ function updateCalendarUI(data) {
         const eventCard = document.createElement('div');
         eventCard.className = `event-item ${colorClass} ${todayClass}`;
         
+        // static/app.js - inside events.forEach(event => { ... })
+
         const eventTitle = (event.summary && event.summary.trim()) ? event.summary.trim() : '(No Title)';
-        
+
         // Build card HTML
         eventCard.innerHTML = `
             <div class="event-date-box">
@@ -420,7 +422,9 @@ function updateCalendarUI(data) {
                 <span class="event-date-day">${escapeHtml(dayLabel)}</span>
             </div>
             <div class="event-details">
+                <!-- THIS IS WHERE THE EVENT SUMMARY/TITLE IS INJECTED: -->
                 <h4 class="event-title">${escapeHtml(eventTitle)}</h4>
+                
                 <div class="event-time-loc">
                     <div class="event-meta-item time">
                         <i data-lucide="clock" class="icon-small"></i>
@@ -436,9 +440,10 @@ function updateCalendarUI(data) {
                 ${event.description ? `<p class="event-desc">${escapeHtml(event.description)}</p>` : ''}
             </div>
         `;
-        
-        container.appendChild(eventCard);
-    });
+
+            
+            container.appendChild(eventCard);
+        });
     
     lucide.createIcons();
 }
